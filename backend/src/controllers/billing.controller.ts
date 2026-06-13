@@ -20,6 +20,12 @@ const statusSchema = z.object({
   status: billingStatusSchema
 });
 
+const createPaymentRecordSchema = z.object({
+  amount: z.union([z.string(), z.number()]).transform(String),
+  receivedAt: z.union([z.string(), z.date()]).transform((v) => (v instanceof Date ? v.toISOString() : v)),
+  note: z.string().optional()
+});
+
 export async function list(req: Request, res: Response) {
   const data = await billingService.listBillings({
     caseId: typeof req.query.caseId === "string" ? req.query.caseId : undefined,
@@ -47,4 +53,18 @@ export async function updateStatus(req: Request, res: Response) {
 export async function summary(req: Request, res: Response) {
   const data = await billingService.billingSummary();
   res.json({ data });
+}
+
+export async function listPayments(req: Request, res: Response) {
+  const data = await billingService.listPaymentRecords(req.params.id);
+  res.json({ data });
+}
+
+export async function createPayment(req: Request, res: Response) {
+  const input = createPaymentRecordSchema.parse(req.body);
+  const data = await billingService.createPaymentRecord({
+    ...input,
+    billingId: req.params.id
+  });
+  res.status(201).json({ data });
 }

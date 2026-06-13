@@ -10,6 +10,7 @@ const router = Router();
 router.use(authMiddleware);
 router.get("/", Permissions("billing:read"), permissionGuard, asyncHandler(billingController.list));
 router.get("/summary", Permissions("billing:read"), permissionGuard, asyncHandler(billingController.summary));
+router.get("/:id/payments", Permissions("billing:read"), permissionGuard, asyncHandler(billingController.listPayments));
 router.post(
   "/",
   Roles("admin", "lawyer"),
@@ -28,6 +29,14 @@ router.patch(
   auditLogInterceptor("status_change", "Billing"),
   asyncHandler(billingController.updateStatus)
 );
+router.post(
+  "/:id/payments",
+  Roles("admin", "lawyer"),
+  roleGuard,
+  Permissions("billing:write"),
+  permissionGuard,
+  auditLogInterceptor("create_payment", "Billing"),
+  asyncHandler(billingController.createPayment)
+);
 
 export default router;
-

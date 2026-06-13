@@ -204,7 +204,7 @@ async function main() {
     }
   });
 
-  await prisma.billing.upsert({
+  const billingA = await prisma.billing.upsert({
     where: { billNo: "BILL-2026-0001" },
     update: {},
     create: {
@@ -217,7 +217,7 @@ async function main() {
       invoiceInfo: { title: "上海澄石贸易有限公司", taxNo: "91310000MA1K000001" }
     }
   });
-  await prisma.billing.upsert({
+  const billingB = await prisma.billing.upsert({
     where: { billNo: "BILL-2026-0002" },
     update: {},
     create: {
@@ -228,6 +228,40 @@ async function main() {
       caseId: caseB.id,
       clientId: clientB.id,
       invoiceInfo: { title: "顾清远" }
+    }
+  });
+
+  await prisma.paymentRecord.upsert({
+    where: { id: "00000000-0000-0000-0000-000000000201" },
+    update: {},
+    create: {
+      id: "00000000-0000-0000-0000-000000000201",
+      billingId: billingA.id,
+      amount: "30000",
+      receivedAt: new Date("2026-05-10T00:00:00.000Z"),
+      note: "首期律师费"
+    }
+  });
+  await prisma.paymentRecord.upsert({
+    where: { id: "00000000-0000-0000-0000-000000000202" },
+    update: {},
+    create: {
+      id: "00000000-0000-0000-0000-000000000202",
+      billingId: billingA.id,
+      amount: "20000",
+      receivedAt: new Date("2026-06-01T00:00:00.000Z"),
+      note: "尾款结清"
+    }
+  });
+  await prisma.paymentRecord.upsert({
+    where: { id: "00000000-0000-0000-0000-000000000203" },
+    update: {},
+    create: {
+      id: "00000000-0000-0000-0000-000000000203",
+      billingId: billingB.id,
+      amount: "1000",
+      receivedAt: new Date("2026-06-05T00:00:00.000Z"),
+      note: "部分预缴诉讼费"
     }
   });
 }

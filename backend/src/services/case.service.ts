@@ -16,7 +16,7 @@ const caseInclude = {
     include: { user: { select: { id: true, name: true, email: true, primaryRole: true } } }
   },
   documents: { include: { uploader: { select: { id: true, name: true } } }, orderBy: { uploadedAt: "desc" as const } },
-  billings: { orderBy: { createdAt: "desc" as const } }
+  billings: { include: { paymentRecords: { orderBy: { receivedAt: "desc" as const } } }, orderBy: { createdAt: "desc" as const } }
 };
 
 export async function listCases(filters: CaseFilters) {

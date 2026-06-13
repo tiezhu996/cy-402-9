@@ -1,4 +1,4 @@
-import { Select, Space, Table } from "antd";
+import { Select, Space, Table, Typography } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useMemo } from "react";
 import { AmountSummary } from "../components/common/AmountSummary";
@@ -7,9 +7,13 @@ import { StatusBadge } from "../components/common/StatusBadge";
 import { useBillingStore } from "../stores/billing";
 import { useCaseStore } from "../stores/case";
 import { useClientStore } from "../stores/client";
-import type { Billing } from "../types";
+import type { Billing, PaymentRecord } from "../types";
 import { BillingStatusLabels, BillingTypeLabels } from "../types/enums";
 import { formatDate, formatMoney } from "../utils/format";
+
+function totalReceived(billing: Billing): number {
+  return (billing.paymentRecords ?? []).reduce((sum, pr) => sum + Number(pr.amount), 0);
+}
 
 export function BillingPage() {
   const { billings, summary, loading, fetchBillings, fetchSummary } = useBillingStore();
@@ -23,11 +27,52 @@ export function BillingPage() {
     void fetchClients();
   }, [fetchBillings, fetchSummary, fetchCases, fetchClients]);
 
+  const expandedRowRender = (record: Billing) => {
+    const payments = record.paymentRecords ?? [];
+    if (payments.length === 0) {
+      return <div style={{ padding: "8px 24px", color: "#999" }}>暂无收款记录</div>;
+    }
+    return (
+      <div style={{ padding: "8px 24px" }}>
+        <Typography.Text type="secondary" style={{ marginBottom: 8, display: "block" }}>
+          收款明细（共 {payments.length} 笔）
+        </Typography.Text>
+        <Table
+          size="small"
+          pagination={false}
+          dataSource={payments}
+          rowKey="id"
+          columns={[
+            { title: "到账时间", dataIndex: "receivedAt", render: formatDate, width: 140 },
+            { title: "收款金额", dataIndex: "amount", render: formatMoney, width: 160 },
+            { title: "备注", dataIndex: "note", render: (value) => value || "-" }
+          ] as ColumnsType<PaymentRecord>}
+        />
+      </div>
+    );
+  };
+
   const columns: ColumnsType<Billing> = useMemo(
     () => [
       { title: "账单编号", dataIndex: "billNo" },
       { title: "费用类型", dataIndex: "type", render: (value) => BillingTypeLabels[value as Billing["type"]] },
-      { title: "金额", dataIndex: "amount", render: formatMoney },
+      {
+        title: "账单金额",
+        dataIndex: "amount",
+        render: formatMoney,
+        sorter: (a, b) => Number(a.amount) - Number(b.amount)
+      },
+      {
+        title: "已收金额",
+        render: (_, record) => formatMoney(totalReceived(record)),
+        sorter: (a, b) => totalReceived(a) - totalReceived(b)
+      },
+      {
+        title: "待收金额",
+        render: (_, record) => formatMoney(Math.max(Number(record.amount) - totalReceived(record), 0)),
+        sorter: (a, b) =>
+          Math.max(Number(a.amount) - totalReceived(a), 0) - Math.max(Number(b.amount) - totalReceived(b), 0)
+      },
       { title: "状态", dataIndex: "status", render: (value) => <StatusBadge status={value} /> },
       { title: "案件", dataIndex: ["case", "title"] },
       { title: "客户", dataIndex: ["client", "name"] },
@@ -74,7 +119,13 @@ export function BillingPage() {
       </div>
       <div className="work-grid" style={{ marginTop: 18 }}>
         <section className="work-band">
-          <Table rowKey="id" loading={loading} dataSource={billings} columns={columns} />
+          <Table
+            rowKey="id"
+            loading={loading}
+            dataSource={billings}
+            columns={columns}
+            expandable={{ expandedRowRender }}
+          />
         </section>
         <aside style={{ display: "grid", gap: 12, alignContent: "start" }}>
           {billings.slice(0, 3).map((billing) => (
@@ -85,4 +136,3 @@ export function BillingPage() {
     </main>
   );
 }
-

@@ -178,21 +178,35 @@ model Document {
 }
 
 model Billing {
-  id          String        @id @default(uuid())
-  billNo      String        @unique
-  type        BillingType
-  amount      Decimal       @db.Decimal(12, 2)
-  status      BillingStatus @default(pending)
-  caseId      String
-  clientId    String
-  invoiceInfo Json?
-  case        Case          @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  client      Client        @relation(fields: [clientId], references: [id])
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id             String          @id @default(uuid())
+  billNo         String          @unique
+  type           BillingType
+  amount         Decimal         @db.Decimal(12, 2)
+  status         BillingStatus   @default(pending)
+  caseId         String
+  clientId       String
+  invoiceInfo    Json?
+  case           Case            @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  client         Client          @relation(fields: [clientId], references: [id])
+  paymentRecords PaymentRecord[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   @@index([status, type, createdAt])
   @@map("billings")
+}
+
+model PaymentRecord {
+  id         String   @id @default(uuid())
+  billingId  String
+  amount     Decimal  @db.Decimal(12, 2)
+  receivedAt DateTime
+  note       String?
+  billing    Billing  @relation(fields: [billingId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([billingId, receivedAt])
+  @@map("payment_records")
 }
 
 model AuditLog {

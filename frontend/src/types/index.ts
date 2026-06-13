@@ -74,8 +74,18 @@ export type Billing = {
   invoiceInfo?: Record<string, unknown>;
   case?: Pick<CaseRecord, "id" | "caseNo" | "title">;
   client?: Pick<Client, "id" | "name">;
+  paymentRecords?: PaymentRecord[];
   createdAt: string;
   updatedAt: string;
+};
+
+export type PaymentRecord = {
+  id: string;
+  billingId: string;
+  amount: string | number;
+  receivedAt: string;
+  note?: string | null;
+  createdAt: string;
 };
 
 export type BillingSummary = {

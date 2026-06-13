@@ -1,11 +1,17 @@
 import { request } from "./request";
-import type { ApiResponse, Billing, BillingSummary } from "../types";
+import type { ApiResponse, Billing, BillingSummary, PaymentRecord } from "../types";
 import type { BillingStatus } from "../types/enums";
 
 export type BillingQuery = {
   caseId?: string;
   clientId?: string;
   status?: BillingStatus;
+};
+
+export type CreatePaymentPayload = {
+  amount: string | number;
+  receivedAt: string;
+  note?: string;
 };
 
 export async function listBillings(params?: BillingQuery) {
@@ -28,3 +34,12 @@ export async function getBillingSummary() {
   return data.data;
 }
 
+export async function listPaymentRecords(billingId: string) {
+  const { data } = await request.get<ApiResponse<PaymentRecord[]>>(`/billing/${billingId}/payments`);
+  return data.data;
+}
+
+export async function createPaymentRecord(billingId: string, payload: CreatePaymentPayload) {
+  const { data } = await request.post<ApiResponse<Billing>>(`/billing/${billingId}/payments`, payload);
+  return data.data;
+}
